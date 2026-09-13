@@ -1,0 +1,23 @@
+{
+  "name": "codex-model-router",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Local hot-switch shell for user-provided Codex APIs and GGUF models",
+  "author": "XJOQAW and Codex Router contributors",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "check": "node scripts-check.mjs",
+    "test": "node --test test/api-forwarder-health.test.mjs test/catalog-publication-lock.test.mjs test/connections.test.mjs test/context-continuity.test.mjs test/generic-providers.test.mjs test/http-utils-resilience.test.mjs test/local-gguf-demand.test.mjs test/local-gguf-process.test.mjs test/local-gguf.test.mjs test/local-llm.test.mjs test/model-failover-router.test.mjs test/model-failover.test.mjs test/project-route.test.mjs test/registry.test.mjs test/router-restart-fallback.test.mjs test/router-restart.test.mjs test/sse-heartbeat.test.mjs",
+    "test:full": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "proper-lockfile": "4.1.2",
+    "undici": "8.10.0"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}
