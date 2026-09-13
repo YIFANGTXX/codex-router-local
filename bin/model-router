@@ -1,0 +1,83 @@
+#!/bin/sh
+set -eu
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+usage() {
+  cat <<'EOF'
+Usage: model-router TARGET COMMAND [arguments]
+
+Targets:
+  codex   the Codex CLI and desktop app
+  dsh     DeepSeek Harness (its settings document, hot-reloaded)
+  gemini  Gemini CLI (its ~/.gemini/.env, read at startup)
+
+Every target shares one router: one service, one set of provider credentials,
+one provider selection. The target chooses which client's configuration a
+command writes, not which router it talks to.
+
+Commands:
+  setup, install, doctor, status, provider-key, providers, enable, disable,
+  chatgpt-session, skills, project-route, multi-agent, media, panel, local-mlx, uninstall, smoke-test,
+  start, stop, update, rollback, shim, subagent-preset (dsh only)
+
+Examples:
+  ./bin/model-router codex doctor
+  ./bin/model-router codex status
+  ./bin/model-router codex panel
+  ./bin/model-router codex local-mlx install --yes
+  ./bin/model-router codex chatgpt-session enable
+  ./bin/model-router codex project-route set deepseek/deepseek-v4-flash
+  ./bin/model-router codex skills approve-external codex-router
+  ./bin/model-router codex shim install
+  ./bin/model-router dsh enable
+  ./bin/model-router dsh status
+  ./bin/model-router gemini enable
+  ./bin/model-router gemini status
+EOF
+}
+
+version() {
+  node -p 'require(process.argv[1]).version' "$repo_dir/package.json"
+}
+
+if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
+  version
+  exit 0
+fi
+
+if [ "$#" -eq 2 ] && { [ "$1" = "codex" ] || [ "$1" = "dsh" ] || [ "$1" = "gemini" ]; } && [ "$2" = "--version" ]; then
+  version
+  exit 0
+fi
+
+if [ "$#" -lt 2 ]; then
+  usage >&2
+  exit 2
+fi
+
+target=$1
+command=$2
+shift 2
+
+case "$target" in
+  codex|dsh|gemini) ;;
+  *) echo "Unknown target: $target" >&2; usage >&2; exit 2 ;;
+esac
+
+case "$command" in
+  setup|install|doctor|status|provider-key|providers|enable|disable|chatgpt-session|skills|project-route|multi-agent|media|panel|local-mlx|uninstall|smoke-test|start|stop|update|rollback|subagent-preset|shim) ;;
+  *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
+esac
+
+if [ "$command" = "project-route" ] && [ "$target" != "codex" ]; then
+  echo "project-route is available only for the codex target." >&2
+  exit 2
+fi
+
+MODEL_ROUTER_TARGET=$target
+export MODEL_ROUTER_TARGET
+if [ "$command" = "project-route" ]; then
+  exec node "$repo_dir/src/project-route.mjs" "$@"
+fi
+exec "$repo_dir/bin/$command" "$@"
